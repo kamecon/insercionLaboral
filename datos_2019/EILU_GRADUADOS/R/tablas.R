@@ -81,6 +81,9 @@ EILU2019SurveySalario <- survey::svydesign(~1,
                                     data = EILU2019dt[PR_SUELDO %in% 1:9],
                                     weights = ~FACTOR)
 
+EILU2019SurveyAprovecha <- survey::svydesign(~1,
+                                           data = EILU2019dt[TR_D21 %in% c(1,2,9)],
+                                           weights = ~FACTOR)
 
 ## Situación laboral actual ------------------------------------------------
 
@@ -112,6 +115,8 @@ EILU2019Survey %>%
   tab_source_note("Fuente = Encuesta de inserción laboral de los titulados universiatrios 2019, INE.") %>% 
   gtsave(filename = "./Tables/SexoEmpleo.tex")
 
+#Tipo de universidad
+
 EILU2019SurveySalario %>% 
   tbl_svysummary(by = T_UNIV, percent = "column", include = PR_SUELDO, label = list(PR_SUELDO ~ "Sueldo")) %>% 
   modify_header(label = "**Tipo de universidad**") %>% 
@@ -121,8 +126,24 @@ EILU2019SurveySalario %>%
   tab_source_note("Fuente = Encuesta de inserción laboral de los titulados universiatrios 2019, INE.") %>% 
   gtsave(filename = "./Tables/SalarioUniv.tex")
 
+EILU2019Survey %>% 
+  tbl_svysummary(by = T_UNIV, percent = "column", include = TRBPRN1, label = list(TRBPRN1 ~ "Situación laboral")) %>% 
+  modify_header(label = "**Tipo de universidad**") %>% 
+  modify_footnote(update = everything() ~ NA) %>% 
+  as_gt() %>% 
+  tab_header(title = "Tipo de universidad vs Situación laboral") %>% 
+  tab_source_note("Fuente = Encuesta de inserción laboral de los titulados universiatrios 2019, INE.") %>% 
+  gtsave(filename = "./Tables/LaboralUniv.tex")
 
-#Sueldo
+EILU2019SurveyAprovecha %>% 
+  tbl_svysummary(by = T_UNIV, percent = "column", include = TR_D21, label = list(TR_D21 ~ "Aprovechamiento")) %>% 
+  modify_header(label = "**Tipo de universidad**") %>% 
+  modify_footnote(update = everything() ~ NA) %>% 
+  as_gt() %>% 
+  tab_header(title = "Tipo de universidad vs Aprovechamiento de los estudios") %>% 
+  tab_source_note("Fuente = Encuesta de inserción laboral de los titulados universiatrios 2019, INE.") %>% 
+  gtsave(filename = "./Tables/AprovechaUniv.tex")
+
 
 
 
