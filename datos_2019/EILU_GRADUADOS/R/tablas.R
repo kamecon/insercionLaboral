@@ -92,4 +92,11 @@ EILU2019dt %>%
   )) #%>%
   as_gt()
   
+  EILU2019dt %>% 
   tbl_cross(row = TRBPRN1, col = RAMA, percent = "cell") 
+
+  
+  survey::svydesign(~1, data = EILU2019dt, weights = ~FACTOR) %>%
+    # summarize weighted data
+    tbl_svysummary(by = RAMA, percent = "cell")
+  
