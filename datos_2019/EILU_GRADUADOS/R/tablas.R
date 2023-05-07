@@ -1,7 +1,7 @@
 
 # Load libraries and files ------------------------------------------------
 
-pacman::p_load(tidyverse, data.table, stargazer, weights, gtsummary, srvyr)
+pacman::p_load(tidyverse, data.table, stargazer, weights, gtsummary, srvyr, survey, gt)
 
 load("datos19.RData")
 
@@ -11,7 +11,6 @@ EILU2019dt <- as.data.table(fichero_salida)
 # Weigthed one way tables -------------------------------------------------
 
 #Sueldo mensual neto del primer trabajo o de su empleo actual en el momento en el que empezó
-
 wpct(EILU2019dt[PR_SUELDO %in% 1:9, PR_SUELDO],
      EILU2019dt[PR_SUELDO %in% 1:9, FACTOR]) %>%
   as.data.frame() %>%
@@ -73,30 +72,75 @@ wpct(EILU2019dt[TR_D21 %in% c(1,2,9), TR_D21],
 
 # Weigthed two way tables -------------------------------------------------
 
+#Convertimos los datos a un objeto survey para poder trabajar con gt summary
+EILU2019Survey <- survey::svydesign(~1,
+                                    data = EILU2019dt,
+                                    weights = ~FACTOR)
+
+EILU2019SurveySalario <- survey::svydesign(~1,
+                                    data = EILU2019dt[PR_SUELDO %in% 1:9],
+                                    weights = ~FACTOR)
+
+
+## Situación laboral actual ------------------------------------------------
+
+#Rama de conocimiento
+EILU2019Survey %>% 
+  tbl_svysummary(by = RAMA, percent = "column", include = TRBPRN1, label = list(TRBPRN1 ~ "Situación laboral actual")) %>% 
+  modify_header(label = "**Rama de estudio**") %>% 
+  modify_footnote(update = everything() ~ NA) %>% 
+  as_gt() %>% 
+  tab_header(title = "Rama de Estudio vs. Situación de Empleo") %>% 
+  tab_source_note("Fuente = Encuesta de inserción laboral de los titulados universiatrios 2019, INE.") %>% 
+  gtsave(filename = "./Tables/RamaEmpleo.tex")
+
+EILU2019Survey %>% 
+  tbl_svysummary(by = T_UNIV, percent = "column", include = TRBPRN1, label = list(TRBPRN1 ~ "Situación de empleo")) %>% 
+  modify_header(label = "**Tipo de Universidad**") %>% 
+  modify_footnote(update = everything() ~ NA) %>% 
+  as_gt() %>% 
+  tab_header(title = "Tipo de Universidad vs. Situación de Empleo") %>% 
+  tab_source_note("Fuente = Encuesta de inserción laboral de los titulados universiatrios 2019, INE.") %>% 
+  gtsave(filename = "./Tables/UnivEmpleo.tex")
+
+EILU2019Survey %>% 
+  tbl_svysummary(by = SEXO, percent = "column", include = TRBPRN1, label = list(TRBPRN1 ~ "Situación de empleo")) %>% 
+  modify_header(label = "**Género**") %>% 
+  modify_footnote(update = everything() ~ NA) %>% 
+  as_gt() %>% 
+  tab_header(title = "Género vs. Situación de Empleo") %>% 
+  tab_source_note("Fuente = Encuesta de inserción laboral de los titulados universiatrios 2019, INE.") %>% 
+  gtsave(filename = "./Tables/SexoEmpleo.tex")
+
+EILU2019SurveySalario %>% 
+  tbl_svysummary(by = T_UNIV, percent = "column", include = PR_SUELDO, label = list(PR_SUELDO ~ "Sueldo")) %>% 
+  modify_header(label = "**Tipo de universidad**") %>% 
+  modify_footnote(update = everything() ~ NA) %>% 
+  as_gt() %>% 
+  tab_header(title = "Tipo de universidad vs Salario") %>% 
+  tab_source_note("Fuente = Encuesta de inserción laboral de los titulados universiatrios 2019, INE.") %>% 
+  gtsave(filename = "./Tables/SalarioUniv.tex")
+
+
+#Sueldo
+
+
+
+# Pruebas con otros paquetes ----------------------------------------------
+
 xtabs(FACTOR ~ TRBPRN1 + RAMA, EILU2019dt) %>%
   prop.table(margin = 2) %>%
   addmargins(margin = 1) %>% 
   format(justify="centre", digits = 2) %>% 
   stargazer()
 
+
 EILU2019dt %>% 
-  as_survey_design(.data = EILU2019dt, weight = FACTOR) %>%
-  tbl_strata(
-    strata = RAMA,
-    ~.x %>% 
-  tbl_svysummary(
-    missing="no",
-    by = TRBPRN1,
-    include=weight,
-    percent="row"
-  )) #%>%
-  as_gt()
-  
-  EILU2019dt %>% 
   tbl_cross(row = TRBPRN1, col = RAMA, percent = "cell") 
 
-  
-  survey::svydesign(~1, data = EILU2019dt, weights = ~FACTOR) %>%
-    # summarize weighted data
-    tbl_svysummary(by = RAMA, percent = "cell")
+
+
+
+
+
   
