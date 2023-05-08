@@ -7,6 +7,14 @@ load("datos19.RData")
 
 EILU2019dt <- as.data.table(fichero_salida)
 
+# Reclasificar tipo de universidad ----------------------------------------
+
+EILU2019dt[, T_UNI2 := fcase(
+  T_UNIV == 1, "Publica",
+  T_UNIV == 2, "Publica",
+  T_UNIV == 3, "Privada",
+  T_UNIV == 4, "Privada")
+]
 
 # Weigthed one way tables -------------------------------------------------
 
@@ -33,6 +41,18 @@ wpct(EILU2019dt[, T_UNIV],
             title = "Tipo de universidad (frecuencia)", 
             notes = "Fuente = Encuesta de inserción laboral de los titulados universiatrios 2019, INE.",
             out = "./Tables/univProp.tex" )
+
+wpct(EILU2019dt[, T_UNI2],
+     EILU2019dt[, FACTOR]) %>%
+  as.data.frame() %>%
+  rownames_to_column() %>%
+  `colnames<-`(c("Sueldo", "Proporción")) %>% 
+  stargazer(summary = FALSE,
+            rownames = FALSE,
+            title = "Tipo de universidad (frecuencia)", 
+            notes = "Fuente = Encuesta de inserción laboral de los titulados universiatrios 2019, INE.",
+            out = "./Tables/univProp2.tex" )
+
 
 #Rama de conocimiento
 wpct(EILU2019dt[, RAMA],
@@ -144,6 +164,17 @@ EILU2019SurveyAprovecha %>%
   tab_source_note("Fuente = Encuesta de inserción laboral de los titulados universiatrios 2019, INE.") %>% 
   gtsave(filename = "./Tables/AprovechaUniv.tex")
 
+
+EILU2019SurveySalario %>% 
+  tbl_svysummary(by = T_UNI2, percent = "column",
+                 include = c(PR_SUELDO, TRBPRN1, TR_D21),
+                 label = list(PR_SUELDO ~ "Sueldo", TRBPRN1 ~ "Situación laboral", TR_D21 ~ "Aprovechamiento")) %>% 
+  modify_header(label = "**Tipo de universidad**") %>% 
+  modify_footnote(update = everything() ~ NA) %>% 
+  as_gt() %>% 
+  tab_header(title = "Tipo de universidad") %>% 
+  tab_source_note("Fuente = Encuesta de inserción laboral de los titulados universiatrios 2019, INE.") %>% 
+  gtsave(filename = "./Tables/SalarioUniv.tex")
 
 
 
